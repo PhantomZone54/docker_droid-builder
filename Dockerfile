@@ -1,13 +1,4 @@
 ARG CODENAME
-
-# Insert here to build nsjail
-FROM ubuntu:${CODENAME} AS jail
-RUN apt-get -y update && apt-get install -y \
-	autoconf bison flex gcc g++ git libprotobuf-dev libnl-route-3-dev libtool make pkg-config protobuf-compiler \
-	&& rm -rf /var/lib/apt/lists/*
-RUN git clone --recurse-submodules https://github.com/google/nsjail nsjail
-RUN cd /nsjail && make && mv /nsjail/nsjail /bin && chmod a+x /bin/nsjail && rm -rf -- /nsjail
-
 FROM ubuntu:${CODENAME}
 # Use Ubuntu Bionic/Focal LTS image as base
 
@@ -58,6 +49,7 @@ RUN set -xe \
 		build-essential gcc gcc-multilib g++ g++-multilib \
 		# make system and stuff
 		clang llvm lld cmake automake autoconf \
+		libprotobuf-dev libnl-route-3-dev libtool pkg-config protobuf-compiler \
 		# XML libraries and stuff
 		libxml2 libxml2-utils xsltproc expat re2c \
 		# Developer's Libraries for ncurses
@@ -115,11 +107,11 @@ RUN mkdir -p extra && cd extra \
 	&& cd ccache \
 	&& git checkout -q v3.7.9 \
 	&& ./autogen.sh && ./configure --disable-man && make -j8 && make install \
+	&& git clone --recurse-submodules https://github.com/google/nsjail nsjail \
+	&& cd /nsjail && make && cp /nsjail/nsjail /home/builder/bin/nsjail && rm -rf -- /nsjail \
+	&& chmod a+x /home/builder/bin/nsjail && nsjail --help \
 	&& cd ../.. \
 	&& rm -rf extra
-
-COPY --from=jail /bin/nsjail /home/builder/bin/nsjail
-RUN nsjail --help
 
 RUN if [ "${SHORTCODE}" = "focal" ]; then \
 		if [ -e /lib/x86_64-linux-gnu/libncurses.so.6 ] && [ ! -e /usr/lib/x86_64-linux-gnu/libncurses.so.5 ]; then \
@@ -143,4 +135,3 @@ VOLUME [/srv/ccache]
 
 # Set default ccache size
 RUN CCACHE_DIR=/srv/ccache ccache -M 8G
-
