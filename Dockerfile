@@ -107,8 +107,8 @@ RUN mkdir -p extra && cd extra \
 	&& cd ccache \
 	&& git checkout -q v3.7.9 \
 	&& ./autogen.sh && ./configure --disable-man && make -j8 && make install \
-	&& git clone --recurse-submodules https://github.com/google/nsjail nsjail \
-	&& cd nsjail && make && cp nsjail/nsjail /home/builder/bin/nsjail \
+	&& cd .. && git clone https://github.com/google/nsjail nsjail \
+	&& cd nsjail && make && ls -lA && cp ./nsjail /home/builder/bin/nsjail \
 	&& chmod a+x /home/builder/bin/nsjail && nsjail --help \
 	&& cd ../.. \
 	&& rm -rf extra
