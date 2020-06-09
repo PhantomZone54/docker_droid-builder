@@ -1,4 +1,13 @@
 ARG CODENAME
+
+# Insert here to build nsjail
+FROM ubuntu:${CODENAME} AS jail
+RUN apt-get -y update && apt-get install -y \
+	autoconf bison flex gcc g++ git libprotobuf-dev libnl-route-3-dev libtool make pkg-config protobuf-compiler \
+	&& rm -rf /var/lib/apt/lists/*
+RUN git clone --recurse-submodules https://github.com/google/nsjail nsjail
+RUN cd /nsjail && make && mv /nsjail/nsjail /bin && chmod a+x /bin/nsjail && rm -rf -- /nsjail
+
 FROM ubuntu:${CODENAME}
 # Use Ubuntu Bionic/Focal LTS image as base
 
@@ -108,6 +117,9 @@ RUN mkdir -p extra && cd extra \
 	&& ./autogen.sh && ./configure --disable-man && make -j8 && make install \
 	&& cd ../.. \
 	&& rm -rf extra
+
+COPY --from=jail /bin/nsjail /home/builder/bin/nsjail
+RUN nsjail --help
 
 RUN if [ "${SHORTCODE}" = "focal" ]; then \
 		if [ -e /lib/x86_64-linux-gnu/libncurses.so.6 ] && [ ! -e /usr/lib/x86_64-linux-gnu/libncurses.so.5 ]; then \
