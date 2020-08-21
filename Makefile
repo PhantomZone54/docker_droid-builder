@@ -1,6 +1,6 @@
 # Makefile to make it all
 
-IMAGE_NAME  := droid-builderz
+IMAGE_NAME  := droid-builder-nsjail
 DOCKER_USERNAME := fr3akyphantom
 # DOCKER_PASSWORD is SECRET
 DOCKER_SLUG := $(DOCKER_USERNAME)/$(IMAGE_NAME)
