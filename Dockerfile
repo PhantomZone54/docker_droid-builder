@@ -8,7 +8,7 @@ LABEL maintainer="fr3akyphantom <rokibhasansagar2014@outlook.com>"
 ENV \
 	DEBIAN_FRONTEND=noninteractive \
 	LANG=C.UTF-8 \
-	JAVA_OPTS=" -Xmx3840m " \
+	JAVA_OPTS=" -Xmx8G " \
 	JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 \
 	PATH=~/bin:/usr/local/bin:/home/builder/bin:$PATH \
 	USE_CCACHE=1 \
@@ -99,15 +99,16 @@ RUN mkdir -p extra && cd extra \
 	&& cd .. \
 	&& if [ "${SHORTCODE}" = "bionic" ]; then \
 		git clone https://github.com/ninja-build/ninja.git; \
-		cd ninja; git checkout -q v1.10.0; \
+		cd ninja; git checkout -q v1.10.2; \
 		./configure.py --bootstrap; \
 		install ./ninja /usr/local/bin/ninja; \
 		cd ..; fi \
 	&& git clone https://github.com/ccache/ccache.git \
-	&& cd ccache \
-	&& git checkout -q v3.7.9 \
-	&& ./autogen.sh && ./configure --disable-man && make -j8 && make install \
-	&& cd .. && git clone https://github.com/google/nsjail nsjail \
+	&& cd ccache && git checkout -q v4.1 \
+	&& mkdir build && cd build \
+	&& cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr .. \
+	&& make -j8 && make install \
+	&& cd ../.. && git clone https://github.com/google/nsjail nsjail \
 	&& cd nsjail && make && ls -lA && cp ./nsjail /home/builder/bin/nsjail \
 	&& chmod a+x /home/builder/bin/nsjail && nsjail --help \
 	&& cd ../.. \
@@ -130,8 +131,10 @@ RUN curl --create-dirs -sL -o /etc/udev/rules.d/51-android.rules -O -L \
 	&& chmod 644 /etc/udev/rules.d/51-android.rules \
 	&& chown root /etc/udev/rules.d/51-android.rules
 
+RUN CCACHE_DIR=/srv/ccache ccache -M 5G \
+	&& chown builder:builder /srv/ccache
+
+USER builder
+
 VOLUME [/home/builder]
 VOLUME [/srv/ccache]
-
-# Set default ccache size
-RUN CCACHE_DIR=/srv/ccache ccache -M 8G
